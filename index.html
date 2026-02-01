@@ -1,29 +1,137 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>My Styled Site</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pool League Standings</title>
     <style>
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            max-width: 800px; 
-            margin: 50px auto; 
-            background: #fdfdfd; 
+        :root {
+            --felt-green: #0a5d3e;
+            --felt-dark: #07422c;
+            --wood-brown: #3e2723;
+            --text-color: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             padding: 20px;
         }
-        .card {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+
+        header {
+            background-color: var(--wood-brown);
+            color: white;
+            width: 100%;
+            max-width: 900px;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px 8px 0 0;
+            border-bottom: 5px solid var(--felt-green);
         }
-        h1 { color: #2ecc71; }
-        p { color: #555; font-size: 1.1em; }
+
+        .container {
+            background: white;
+            width: 100%;
+            max-width: 900px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-radius: 0 0 8px 8px;
+        }
+
+        h2 { color: var(--felt-green); border-bottom: 2px solid #eee; padding-bottom: 10px; }
+
+        /* Table Styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th {
+            background-color: var(--felt-green);
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        tr:hover { background-color: #f1f1f1; }
+
+        .loading { text-align: center; font-style: italic; color: #888; }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h1>Hello from CSS!</h1>
-        <p>This page looks much better because of a few lines of styling. I've added a "card" layout, changed the fonts, and centered the content.</p>
+
+    <header>
+        <h1>City Pool League</h1>
+        <p>Live Standings & Match Results</p>
+    </header>
+
+    <div class="container">
+        <h2>Current Standings</h2>
+        <div id="loader" class="loading">Loading live data from the league office...</div>
+        <table id="standings-table" style="display:none;">
+            <thead>
+                <tr id="table-header"></tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+        </table>
     </div>
+
+    <script>
+        const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT7I8Vhws-a0KiVfiAzXZFneeKXAAJj51zqtjOf9h2AOHh51RWfZwyFCMtWU6VpckdXYVpGj8l0fPRv/pub?output=csv';
+
+        async function loadStandings() {
+            try {
+                const response = await fetch(csvUrl);
+                const data = await response.text();
+                
+                // Parse CSV rows
+                const rows = data.split('\n').map(row => row.split(','));
+                const tableHeader = document.getElementById('table-header');
+                const tableBody = document.getElementById('table-body');
+                const loader = document.getElementById('loader');
+                const table = document.getElementById('standings-table');
+
+                // Generate Headers
+                rows[0].forEach(headerText => {
+                    let th = document.createElement('th');
+                    th.textContent = headerText;
+                    tableHeader.appendChild(th);
+                });
+
+                // Generate Rows
+                rows.slice(1).forEach(row => {
+                    if (row.length < 2) return; 
+                    let tr = document.createElement('tr');
+                    row.forEach(cellText => {
+                        let td = document.createElement('td');
+                        td.textContent = cellText;
+                        tr.appendChild(td);
+                    });
+                    tableBody.appendChild(tr);
+                });
+
+                // Hide loader and show table
+                loader.style.display = 'none';
+                table.style.display = 'table';
+
+            } catch (error) {
+                document.getElementById('loader').textContent = "Error loading standings. Please refresh.";
+                console.error("Error fetching data:", error);
+            }
+        }
+
+        loadStandings();
+    </script>
 </body>
 </html>
