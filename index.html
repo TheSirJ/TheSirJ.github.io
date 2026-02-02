@@ -10,6 +10,7 @@
             --felt-dark: #07422c;
             --wood-brown: #3e2723;
             --text-color: #333;
+            --accent-gold: #d4af37;
         }
 
         body {
@@ -45,27 +46,41 @@
         h2 { color: var(--felt-green); border-bottom: 2px solid #eee; padding-bottom: 10px; }
 
         /* Table Styling */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { background-color: var(--felt-green); color: white; padding: 12px; text-align: left; }
+        td { padding: 12px; border-bottom: 1px solid #ddd; }
+        
+        /* Interactive Standings Rows */
+        #table-body tr { cursor: pointer; transition: background 0.2s; }
+        #table-body tr:hover { background-color: #e8f5e9; }
+
+        /* Modal Styles */
+        #modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 100;
         }
-
-        th {
-            background-color: var(--felt-green);
-            color: white;
-            padding: 12px;
-            text-align: left;
+        #schedule-modal {
+            display: none;
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            z-index: 101;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
-
-        td {
-            padding: 12px;
-            border-bottom: 1px solid #ddd;
-        }
-
-        tr:nth-child(even) { background-color: #f9f9f9; }
-        tr:hover { background-color: #f1f1f1; }
-
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--felt-green); margin-bottom: 15px; }
+        .close-btn { font-size: 24px; cursor: pointer; color: #888; }
+        .close-btn:hover { color: #333; }
+        
+        .win { color: #2e7d32; font-weight: bold; }
+        .loss { color: #c62828; font-weight: bold; }
         .loading { text-align: center; font-style: italic; color: #888; }
     </style>
 </head>
@@ -86,51 +101,126 @@
         </table>
     </div>
 
+    <div id="modal-overlay" onclick="closeModal()"></div>
+    <div id="schedule-modal">
+        <div class="modal-header">
+            <h3 id="modal-title" style="margin:0; color:var(--felt-green);">Player Schedule</h3>
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+        </div>
+        <table id="modal-table">
+            <thead>
+                <tr>
+                    <th>Week</th>
+                    <th>Opponent</th>
+                    <th>Result</th>
+                </tr>
+            </thead>
+            <tbody id="modal-body"></tbody>
+        </table>
+    </div>
+
     <script>
-        const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT7I8Vhws-a0KiVfiAzXZFneeKXAAJj51zqtjOf9h2AOHh51RWfZwyFCMtWU6VpckdXYVpGj8l0fPRv/pub?gid=2132397504&single=true&output=csv';
+        // REPLACE scheduleCsvUrl with your actual published Schedule CSV link
+        const standingsCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT7I8Vhws-a0KiVfiAzXZFneeKXAAJj51zqtjOf9h2AOHh51RWfZwyFCMtWU6VpckdXYVpGj8l0fPRv/pub?gid=2132397504&single=true&output=csv';
+        const scheduleCsvUrl = 'PASTE_YOUR_SCHEDULE_CSV_HERE'; 
 
-        async function loadStandings() {
+        let scheduleData = [];
+
+        async function init() {
             try {
-                const response = await fetch(csvUrl);
+                // 1. Fetch Schedule Data
+                const sResponse = await fetch(scheduleCsvUrl);
+                const sText = await sResponse.text();
+                scheduleData = sText.split('\n').map(row => row.split(','));
+
+                // 2. Fetch Standings Data
+                const response = await fetch(standingsCsvUrl);
                 const data = await response.text();
-                
-                // Parse CSV rows
                 const rows = data.split('\n').map(row => row.split(','));
-                const tableHeader = document.getElementById('table-header');
-                const tableBody = document.getElementById('table-body');
-                const loader = document.getElementById('loader');
-                const table = document.getElementById('standings-table');
-
-                // Generate Headers
-                rows[0].forEach(headerText => {
-                    let th = document.createElement('th');
-                    th.textContent = headerText;
-                    tableHeader.appendChild(th);
-                });
-
-                // Generate Rows
-                rows.slice(1).forEach(row => {
-                    if (row.length < 2) return; 
-                    let tr = document.createElement('tr');
-                    row.forEach(cellText => {
-                        let td = document.createElement('td');
-                        td.textContent = cellText;
-                        tr.appendChild(td);
-                    });
-                    tableBody.appendChild(tr);
-                });
-
-                // Hide loader and show table
-                loader.style.display = 'none';
-                table.style.display = 'table';
+                
+                renderStandings(rows);
 
             } catch (error) {
                 document.getElementById('loader').textContent = "Error loading standings. Please refresh.";
-                console.error("Error fetching data:", error);
+                console.error(error);
             }
         }
 
-        loadStandings();
+        function renderStandings(rows) {
+            const tableHeader = document.getElementById('table-header');
+            const tableBody = document.getElementById('table-body');
+            const loader = document.getElementById('loader');
+            const table = document.getElementById('standings-table');
+
+            // Generate Headers
+            rows[0].forEach(headerText => {
+                let th = document.createElement('th');
+                th.textContent = headerText;
+                tableHeader.appendChild(th);
+            });
+
+            // Generate Rows
+            rows.slice(1).forEach(row => {
+                if (row.length < 2) return; 
+                let tr = document.createElement('tr');
+                
+                // Add click event for schedule
+                tr.onclick = () => openSchedule(row[0]); 
+
+                row.forEach(cellText => {
+                    let td = document.createElement('td');
+                    td.textContent = cellText;
+                    tr.appendChild(td);
+                });
+                tableBody.appendChild(tr);
+            });
+
+            loader.style.display = 'none';
+            table.style.display = 'table';
+        }
+
+        function openSchedule(playerName) {
+            const modalBody = document.getElementById('modal-body');
+            const modalTitle = document.getElementById('modal-title');
+            modalTitle.textContent = `${playerName}'s Match History`;
+            modalBody.innerHTML = '';
+
+            // Filter scheduleData (Week, P1, P2, P1Win, Processed)
+            scheduleData.slice(1).forEach(game => {
+                let [week, p1, p2, p1win, processed] = game;
+                if (!p1 || !p2) return;
+
+                // Clean up strings (remove extra spaces/quotes)
+                p1 = p1.trim();
+                p2 = p2.trim();
+                playerName = playerName.trim();
+
+                if (p1 === playerName || p2 === playerName) {
+                    const opponent = (p1 === playerName) ? p2 : p1;
+                    let resultHtml = '<i>TBD</i>';
+
+                    if (processed && processed.trim().toUpperCase() === 'TRUE') {
+                        const p1DidWin = (p1win.trim().toUpperCase() === 'TRUE');
+                        const playerDidWin = (p1 === playerName) ? p1DidWin : !p1DidWin;
+                        resultHtml = playerDidWin ? '<span class="win">W</span>' : '<span class="loss">L</span>';
+                    }
+
+                    let tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${week}</td><td>${opponent}</td><td>${resultHtml}</td>`;
+                    modalBody.appendChild(tr);
+                }
+            });
+
+            document.getElementById('modal-overlay').style.display = 'block';
+            document.getElementById('schedule-modal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('modal-overlay').style.display = 'none';
+            document.getElementById('schedule-modal').style.display = 'none';
+        }
+
+        init();
     </script>
 </body>
 </html>
