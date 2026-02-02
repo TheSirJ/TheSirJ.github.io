@@ -200,7 +200,6 @@
             const scrollContainer = document.querySelector('.modal-scroll-container');
             document.getElementById('modal-title').textContent = playerName + "'s History";
             modalBody.innerHTML = '';
-            if (scrollContainer) scrollContainer.scrollTop = 0;
 
             // 1. Find ID from Name
             const pEntry = playersData.find(r => r[1] && r[1].trim() === playerName);
@@ -220,8 +219,8 @@
                     let res = 'TBD';
                     if ((proc || '').toUpperCase() === 'TRUE') {
                         const p1W = (p1win || '').toUpperCase() === 'TRUE';
-                        const winnerID = p1W ? p1ID : p2ID;
-                        res = (winnerID === targetID) ? '<span class="win">W</span>' : '<span class="loss">L</span>';
+                        // use boolean comparison: if player is p1 and p1W true => win
+                        res = (isP1 === p1W) ? '<span class="win">W</span>' : '<span class="loss">L</span>';
                     }
                     let tr = document.createElement('tr');
                     tr.innerHTML = `<td>${week}</td><td title="${oppName}">${oppName}</td><td>${res}</td>`;
@@ -229,9 +228,18 @@
                 }
             });
 
-            if (scrollContainer) scrollContainer.scrollTop = 0;
+            // Show modal first so layout/scrolling is established, then reset scroll position
             document.getElementById('modal-overlay').style.display = 'block';
             document.getElementById('schedule-modal').style.display = 'block';
+            // ensure scroll is at top on next frame after modal is visible
+            requestAnimationFrame(() => {
+                if (scrollContainer) {
+                    scrollContainer.scrollTop = 0;
+                    scrollContainer.scrollTo({ top: 0 });
+                }
+                const modalEl = document.getElementById('schedule-modal');
+                if (modalEl) modalEl.scrollTop = 0;
+            });
         }
 
         function closeModal() {
