@@ -41,7 +41,7 @@
             margin-bottom: 10px;
             flex-shrink: 0; /* Prevents header from squishing */
         }
-
+        
         #schedule-modal {
             display: none;
             position: fixed;
@@ -54,19 +54,22 @@
             width: 90%;
             max-width: 400px;
             
-            /* FIX: Limits total height and enables flex layout */
+            /* FIX: Set a hard limit and stop the modal itself from scrolling */
+            height: auto;
             max-height: 70vh; 
             display: flex;
             flex-direction: column;
+            overflow: hidden; /* This forces the scroll to happen inside, not outside */
             box-shadow: 0 10px 40px rgba(0,0,0,0.5);
         }
         
         .modal-scroll-container {
-            /* FIX: Tells this box to grow and show scrollbars if content is too long */
+            /* FIX: Force this box to scroll if content exceeds the space */
             overflow-y: auto;
-            flex-grow: 1; 
+            flex: 1 1 auto; 
+            min-height: 0; /* Crucial for flexbox scrolling */
             margin-top: 10px;
-            border: 1px solid #eee; /* Optional: adds a slight border around the scroll area */
+            border: 1px solid #eee;
         }
         
         #modal-table {
@@ -76,11 +79,12 @@
         
         #modal-table th {
             position: sticky;
-            top: 0;
+            top: -1px; /* Slight offset ensures no gaps */
             background-color: var(--felt-green);
             color: white;
             padding: 10px;
-            z-index: 2;
+            z-index: 10;
+        }
         }
     </style>
 </head>
