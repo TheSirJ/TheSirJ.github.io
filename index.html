@@ -23,13 +23,60 @@
         #table-body tr { cursor: pointer; }
         #table-body tr:hover { background-color: #f1f1f1; }
 
-        /* Modal Styles */
-        #modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 100; }
-        #schedule-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 25px; border-radius: 8px; z-index: 101; width: 90%; max-width: 500px; }
-        .modal-header { display: flex; justify-content: space-between; border-bottom: 2px solid var(--felt-green); margin-bottom: 15px; }
-        .win { color: green; font-weight: bold; }
-        .loss { color: red; font-weight: bold; }
-        .loading { text-align: center; font-style: italic; color: #888; }
+        /* Updated Modal Styles */
+        #modal-overlay { 
+            display: none; 
+            position: fixed; 
+            top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.8); 
+            z-index: 100; 
+        }
+        
+        #schedule-modal {
+            display: none;
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            z-index: 101;
+            width: 90%;
+            max-width: 450px; /* Slightly narrower for a cleaner look */
+            max-height: 80vh; /* Limits height to 80% of the screen height */
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        
+        .modal-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            border-bottom: 2px solid var(--felt-green); 
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+            flex-shrink: 0; /* Prevents header from squishing */
+        }
+        
+        /* This is the magic part for scrolling */
+        .modal-scroll-container {
+            overflow-y: auto;
+            flex-grow: 1;
+            border-radius: 4px;
+        }
+        
+        #modal-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        #modal-table th {
+            position: sticky; /* Keeps headers visible while you scroll */
+            top: 0;
+            background-color: var(--felt-green);
+            z-index: 1;
+        }
     </style>
 </head>
 <body>
@@ -46,15 +93,24 @@
     </div>
 
     <div id="modal-overlay" onclick="closeModal()"></div>
+    <div id="modal-overlay" onclick="closeModal()"></div>
     <div id="schedule-modal">
         <div class="modal-header">
-            <h3 id="modal-title" style="margin:0;">Player Schedule</h3>
-            <span style="cursor:pointer" onclick="closeModal()">✖</span>
+            <h3 id="modal-title" style="margin:0; font-size: 1.2rem;">Player Schedule</h3>
+            <span style="cursor:pointer; font-size: 1.5rem; font-weight: bold; color: #888;" onclick="closeModal()">×</span>
         </div>
-        <table id="modal-table">
-            <thead><tr><th>Week</th><th>Opponent</th><th>Result</th></tr></thead>
-            <tbody id="modal-body"></tbody>
-        </table>
+        <div class="modal-scroll-container">
+            <table id="modal-table">
+                <thead>
+                    <tr>
+                        <th>Week</th>
+                        <th>Opponent</th>
+                        <th>Result</th>
+                    </tr>
+                </thead>
+                <tbody id="modal-body"></tbody>
+            </table>
+        </div>
     </div>
 
     <script>
