@@ -249,7 +249,7 @@
                 if (i === 0) tr.classList.add('podium', 'podium-1');
                 else if (i === 1) tr.classList.add('podium', 'podium-2');
                 else if (i === 2) tr.classList.add('podium', 'podium-3');
-                tr.onclick = () => openSchedule(row[0].trim());
+                tr.onclick = () => openSchedule(row[1].trim());
                 row.forEach(cell => {
                     let td = document.createElement('td');
                     td.textContent = cell;
