@@ -48,11 +48,11 @@
             width: 100%;
             max-width: 900px;
             background: white;
-            border-radius: 8px;
+            border-radius: 0 0 8px 8px;
             padding: 18px;
             box-shadow: inset 0 2px 0 rgba(255,255,255,0.3), 0 6px 20px rgba(0,0,0,0.2);
         }
-        header { background-color: var(--wood-brown); color: white; width: 100%; max-width: 900px; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; border-bottom: 5px solid var(--felt-green); }
+        header { background-color: var(--felt-green); color: white; width: 100%; max-width: 900px; padding: 18px; text-align: center; border-radius: 8px 8px 0 0; border-bottom: 5px solid var(--wood-brown); }
         .container { background: white; width: 100%; max-width: 900px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-radius: 0 0 8px 8px; }
         h2 { color: var(--felt-green); border-bottom: 2px solid #eee; padding-bottom: 10px; }
 
@@ -162,10 +162,9 @@
 </head>
 <body>
 
-    <header><h1>Crimson Cue</h1></header>
-
     <div class="table-frame">
-    <div class="container">
+        <header><h1 style="margin:0;">Crimson Cue</h1></header>
+        <div class="container">
         <h2>League Standings</h2>
         <div id="loader" class="loading">Fetching league data...</div>
         <table id="standings-table" style="display:none;">
@@ -241,7 +240,7 @@
                 tableHeader.appendChild(th);
             });
 
-            // Rows
+            // Rows (standings now: Rank, PlayerName, Record, SOR)
             rows.slice(1).forEach((row, i) => {
                 if (row.length < 2) return;
                 let tr = document.createElement('tr');
@@ -249,7 +248,8 @@
                 if (i === 0) tr.classList.add('podium', 'podium-1');
                 else if (i === 1) tr.classList.add('podium', 'podium-2');
                 else if (i === 2) tr.classList.add('podium', 'podium-3');
-                tr.onclick = () => openSchedule(row[0].trim());
+                // player name is now the second column
+                tr.onclick = () => openSchedule((row[1] || '').trim());
                 row.forEach(cell => {
                     let td = document.createElement('td');
                     td.textContent = cell;
