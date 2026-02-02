@@ -197,8 +197,10 @@
 
         function openSchedule(playerName) {
             const modalBody = document.getElementById('modal-body');
+            const scrollContainer = document.querySelector('.modal-scroll-container');
             document.getElementById('modal-title').textContent = playerName + "'s History";
             modalBody.innerHTML = '';
+            if (scrollContainer) scrollContainer.scrollTop = 0;
 
             // 1. Find ID from Name
             const pEntry = playersData.find(r => r[1] && r[1].trim() === playerName);
@@ -216,16 +218,18 @@
                     const isP1 = (p1ID === targetID);
                     const oppName = idMap[isP1 ? p2ID : p1ID] || "Unknown";
                     let res = 'TBD';
-                    if (proc.toUpperCase() === 'TRUE') {
-                        const p1W = (p1win.toUpperCase() === 'TRUE');
-                        res = (isP1 === p1W) ? '<span class="win">W</span>' : '<span class="loss">L</span>';
+                    if ((proc || '').toUpperCase() === 'TRUE') {
+                        const p1W = (p1win || '').toUpperCase() === 'TRUE';
+                        const winnerID = p1W ? p1ID : p2ID;
+                        res = (winnerID === targetID) ? '<span class="win">W</span>' : '<span class="loss">L</span>';
                     }
                     let tr = document.createElement('tr');
-                    tr.innerHTML = `<td>${week}</td><td>${oppName}</td><td>${res}</td>`;
+                    tr.innerHTML = `<td>${week}</td><td title="${oppName}">${oppName}</td><td>${res}</td>`;
                     modalBody.appendChild(tr);
                 }
             });
 
+            if (scrollContainer) scrollContainer.scrollTop = 0;
             document.getElementById('modal-overlay').style.display = 'block';
             document.getElementById('schedule-modal').style.display = 'block';
         }
