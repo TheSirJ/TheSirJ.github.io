@@ -15,14 +15,10 @@
 
         body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; padding: 20px;
             /* Pool-table felt background */
+            /* SVG green felt background (data URI) */
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='120'><rect width='100%25' height='100%25' fill='%230b5d3f'/><g opacity='0.06'><rect width='100%25' height='100%25' fill='white'/></g></svg>");
             background-color: #0b5d3f;
-            /* stronger felt texture: tighter repeating lines + subtle diagonal micro-stripe */
-            background-image:
-                repeating-linear-gradient(0deg, rgba(255,255,255,0.03) 0 1px, transparent 1px 4px),
-                repeating-linear-gradient(45deg, rgba(255,255,255,0.015) 0 1px, transparent 1px 6px),
-                linear-gradient(180deg, rgba(0,0,0,0.05), rgba(255,255,255,0.02));
-            background-size: 100% 3px, 6px 6px, auto;
-            background-blend-mode: overlay, overlay;
+            background-size: cover;
         }
 
         /* Wood frame around the container */
@@ -31,11 +27,18 @@
             max-width: 920px;
             padding: 14px; /* frame thickness */
             border-radius: 14px;
-            background: linear-gradient(180deg,#5b3421,#3c1f14); /* wood base */
+            /* SVG wood grain background (data URI) */
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='120' viewBox='0 0 800 120'><defs><linearGradient id='g' x1='0' x2='0'><stop offset='0' stop-color='%235b3421'/><stop offset='1' stop-color='%233c1f14'/></linearGradient></defs><rect width='100%25' height='100%25' fill='url(%23g)'/><g opacity='0.06' fill='rgba(255,255,255,0.06)'><rect x='0' y='10' width='800' height='4'/><rect x='0' y='50' width='800' height='3'/></g></svg>");
             box-shadow: 0 8px 30px rgba(0,0,0,0.5), inset 0 -6px 18px rgba(0,0,0,0.25);
             display: flex;
+            flex-direction: column;
+            align-items: center;
             justify-content: center;
+            position: relative;
         }
+
+        /* inner wrapper for header frame */
+        .table-frame .frame-inner { width: 100%; max-width: 900px; }
 
         /* Slight inner bevel to simulate rail inset */
         .table-frame::after {
@@ -154,24 +157,28 @@
         #table-body tr.podium-2 { background: linear-gradient(90deg,#f0f0f0,#d7d7d7); font-weight:700; }
         #table-body tr.podium-3 { background: linear-gradient(90deg,#f5e6da,#e0b38a); font-weight:700; }
 
-        /* Medal icons before the first cell of each podium row */
-        #table-body tr.podium-1 td:first-child::before { content: "🥇 "; margin-right:6px; font-size:1.05em; }
-        #table-body tr.podium-2 td:first-child::before { content: "🥈 "; margin-right:6px; font-size:1.05em; }
-        #table-body tr.podium-3 td:first-child::before { content: "🥉 "; margin-right:6px; font-size:1.05em; }
+        /* Medal inline SVG styling */
+        .medal { display: inline-flex; align-items: center; margin-right: 6px; }
+        .medal svg { width: 1.15em; height: 1.15em; display: block; }
     </style>
 </head>
 <body>
 
     <div class="table-frame">
-        <header><h1 style="margin:0;">Crimson Cue</h1></header>
-        <div class="container">
-        <h2>League Standings</h2>
-        <div id="loader" class="loading">Fetching league data...</div>
-        <table id="standings-table" style="display:none;">
-            <thead><tr id="table-header"></tr></thead>
-            <tbody id="table-body"></tbody>
-        </table>
+        <div class="frame-inner">
+            <header><h1 style="margin:0;">Crimson Cue</h1></header>
+        </div>
     </div>
+
+    <div class="table-frame">
+        <div class="container">
+            <h2>League Standings</h2>
+            <div id="loader" class="loading">Fetching league data...</div>
+            <table id="standings-table" style="display:none;">
+                <thead><tr id="table-header"></tr></thead>
+                <tbody id="table-body"></tbody>
+            </table>
+        </div>
     </div>
     <div id="modal-overlay" onclick="closeModal()"></div>
     <div id="schedule-modal">
@@ -206,6 +213,13 @@
             const s = String(val).trim().toLowerCase();
             return s === '1' || s === 'true' || s === 'yes' || s === 'y' || s === 't';
         }
+
+        // SVG medal icons (inline markup)
+        const medalSVG = {
+            gold: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><defs><radialGradient id="g1"><stop offset="0" stop-color="#fffacd"/><stop offset="1" stop-color="#ffd24d"/></radialGradient></defs><circle cx="12" cy="8" r="5" fill="url(%23g1)" stroke="#c39200" stroke-width="0.8"/><rect x="9" y="12" width="6" height="8" fill="#c39200"/></svg>',
+            silver: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="g2" x1="0" x2="0"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#cfcfcf"/></linearGradient></defs><circle cx="12" cy="8" r="5" fill="url(%23g2)" stroke="#9a9a9a" stroke-width="0.8"/><rect x="9" y="12" width="6" height="8" fill="#9a9a9a"/></svg>',
+            bronze: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="g3" x1="0" x2="0"><stop offset="0" stop-color="#fff1e6"/><stop offset="1" stop-color="#d99a6a"/></linearGradient></defs><circle cx="12" cy="8" r="5" fill="url(%23g3)" stroke="#a86b3d" stroke-width="0.8"/><rect x="9" y="12" width="6" height="8" fill="#a86b3d"/></svg>'
+        };
 
         async function init() {
             try {
@@ -250,9 +264,18 @@
                 else if (i === 2) tr.classList.add('podium', 'podium-3');
                 // player name is now the second column
                 tr.onclick = () => openSchedule((row[1] || '').trim());
-                row.forEach(cell => {
+                row.forEach((cell, ci) => {
                     let td = document.createElement('td');
-                    td.textContent = cell;
+                    if (ci === 0 && i < 3) {
+                        // prepend medal SVG and then the cell text
+                        const wrap = document.createElement('span');
+                        wrap.className = 'medal';
+                        wrap.innerHTML = (i === 0 ? medalSVG.gold : (i === 1 ? medalSVG.silver : medalSVG.bronze));
+                        td.appendChild(wrap);
+                        td.appendChild(document.createTextNode(cell));
+                    } else {
+                        td.textContent = cell;
+                    }
                     tr.appendChild(td);
                 });
                 tableBody.appendChild(tr);
