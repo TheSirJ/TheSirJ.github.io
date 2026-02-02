@@ -12,7 +12,15 @@
             --text-color: #333;
         }
 
-        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f4f4; margin: 0; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; padding: 20px;
+            /* Pool-table felt background */
+            background-color: #0b5d3f;
+            background-image:
+                repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0 1px, transparent 1px 6px),
+                linear-gradient(180deg, rgba(0,0,0,0.03), rgba(255,255,255,0.02));
+            background-size: 100% 4px, auto;
+            background-blend-mode: overlay;
+        }
         header { background-color: var(--wood-brown); color: white; width: 100%; max-width: 900px; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; border-bottom: 5px solid var(--felt-green); }
         .container { background: white; width: 100%; max-width: 900px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-radius: 0 0 8px 8px; }
         h2 { color: var(--felt-green); border-bottom: 2px solid #eee; padding-bottom: 10px; }
@@ -114,6 +122,11 @@
         #table-body tr.podium-1 { background: linear-gradient(90deg,#fff7d6,#ffe39b); font-weight:700; }
         #table-body tr.podium-2 { background: linear-gradient(90deg,#f0f0f0,#d7d7d7); font-weight:700; }
         #table-body tr.podium-3 { background: linear-gradient(90deg,#f5e6da,#e0b38a); font-weight:700; }
+
+        /* Medal icons before the first cell of each podium row */
+        #table-body tr.podium-1 td:first-child::before { content: "🥇 "; margin-right:6px; font-size:1.05em; }
+        #table-body tr.podium-2 td:first-child::before { content: "🥈 "; margin-right:6px; font-size:1.05em; }
+        #table-body tr.podium-3 td:first-child::before { content: "🥉 "; margin-right:6px; font-size:1.05em; }
     </style>
 </head>
 <body>
