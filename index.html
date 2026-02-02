@@ -1,236 +1,118 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pool League Standings</title>
-    <style>
-        :root {
-            --felt-green: #0a5d3e;
-            --felt-dark: #07422c;
-            --wood-brown: #3e2723;
-            --text-color: #333;
-            --accent-gold: #d4af37;
-        }
+const standingsUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT7I8Vhws-a0KiVfiAzXZFneeKXAAJj51zqtjOf9h2AOHh51RWfZwyFCMtWU6VpckdXYVpGj8l0fPRv/pub?gid=2132397504&single=true&output=csv';
+const scheduleUrl  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT7I8Vhws-a0KiVfiAzXZFneeKXAAJj51zqtjOf9h2AOHh51RWfZwyFCMtWU6VpckdXYVpGj8l0fPRv/pub?gid=1315791574&single=true&output=csv';
+const playersUrl   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT7I8Vhws-a0KiVfiAzXZFneeKXAAJj51zqtjOf9h2AOHh51RWfZwyFCMtWU6VpckdXYVpGj8l0fPRv/pub?gid=1493303522&single=true&output=csv';
 
-        body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background-color: #f4f4f4;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-        }
+let scheduleData = [];
+let playersData = [];
 
-        header {
-            background-color: var(--wood-brown);
-            color: white;
-            width: 100%;
-            max-width: 900px;
-            padding: 20px;
-            text-align: center;
-            border-radius: 8px 8px 0 0;
-            border-bottom: 5px solid var(--felt-green);
-        }
+async function init() {
+    try {
+        // Fetch all three data sources simultaneously
+        const [stResp, schResp, plResp] = await Promise.all([
+            fetch(standingsUrl),
+            fetch(scheduleUrl),
+            fetch(playersUrl)
+        ]);
 
-        .container {
-            background: white;
-            width: 100%;
-            max-width: 900px;
-            padding: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            border-radius: 0 0 8px 8px;
-        }
+        const stText = await stResp.text();
+        const schText = await schResp.text();
+        const plText = await plResp.text();
 
-        h2 { color: var(--felt-green); border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        // Parse CSVs
+        const standingsRows = stText.split('\n').map(row => row.split(','));
+        scheduleData = schText.split('\n').map(row => row.split(','));
+        playersData = plText.split('\n').map(row => row.split(','));
 
-        /* Table Styling */
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th { background-color: var(--felt-green); color: white; padding: 12px; text-align: left; }
-        td { padding: 12px; border-bottom: 1px solid #ddd; }
+        renderStandings(standingsRows);
+    } catch (e) {
+        console.error("Initialization failed", e);
+        document.getElementById('loader').textContent = "Error loading data.";
+    }
+}
+
+function renderStandings(rows) {
+    const tableHeader = document.getElementById('table-header');
+    const tableBody = document.getElementById('table-body');
+    const table = document.getElementById('standings-table');
+
+    // 1. Headers
+    rows[0].forEach(text => {
+        let th = document.createElement('th');
+        th.textContent = text;
+        tableHeader.appendChild(th);
+    });
+
+    // 2. Rows
+    rows.slice(1).forEach(row => {
+        if (row.length < 2) return;
+        let tr = document.createElement('tr');
         
-        /* Interactive Standings Rows */
-        #table-body tr { cursor: pointer; transition: background 0.2s; }
-        #table-body tr:hover { background-color: #e8f5e9; }
+        // When clicked, pass the Player Name to the lookup function
+        tr.onclick = () => openSchedule(row[0].trim());
 
-        /* Modal Styles */
-        #modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7);
-            z-index: 100;
-        }
-        #schedule-modal {
-            display: none;
-            position: fixed;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 25px;
-            border-radius: 8px;
-            z-index: 101;
-            width: 90%;
-            max-width: 600px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--felt-green); margin-bottom: 15px; }
-        .close-btn { font-size: 24px; cursor: pointer; color: #888; }
-        .close-btn:hover { color: #333; }
-        
-        .win { color: #2e7d32; font-weight: bold; }
-        .loss { color: #c62828; font-weight: bold; }
-        .loading { text-align: center; font-style: italic; color: #888; }
-    </style>
-</head>
-<body>
+        row.forEach(cell => {
+            let td = document.createElement('td');
+            td.textContent = cell;
+            tr.appendChild(td);
+        });
+        tableBody.appendChild(tr);
+    });
 
-    <header>
-        <h1>Crimson Cue</h1>
-    </header>
+    document.getElementById('loader').style.display = 'none';
+    table.style.display = 'table';
+}
 
-    <div class="container">
-        <h2>Live Standings & Match Results</h2>
-        <div id="loader" class="loading">Loading live data from the league office...</div>
-        <table id="standings-table" style="display:none;">
-            <thead>
-                <tr id="table-header"></tr>
-            </thead>
-            <tbody id="table-body"></tbody>
-        </table>
-    </div>
-
-    <div id="modal-overlay" onclick="closeModal()"></div>
-    <div id="schedule-modal">
-        <div class="modal-header">
-            <h3 id="modal-title" style="margin:0; color:var(--felt-green);">Player Schedule</h3>
-            <span class="close-btn" onclick="closeModal()">&times;</span>
-        </div>
-        <table id="modal-table">
-            <thead>
-                <tr>
-                    <th>Week</th>
-                    <th>Opponent</th>
-                    <th>Result</th>
-                </tr>
-            </thead>
-            <tbody id="modal-body"></tbody>
-        </table>
-    </div>
-
-    <script>
-        const standingsCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT7I8Vhws-a0KiVfiAzXZFneeKXAAJj51zqtjOf9h2AOHh51RWfZwyFCMtWU6VpckdXYVpGj8l0fPRv/pub?gid=2132397504&single=true&output=csv';
-        const scheduleCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT7I8Vhws-a0KiVfiAzXZFneeKXAAJj51zqtjOf9h2AOHh51RWfZwyFCMtWU6VpckdXYVpGj8l0fPRv/pub?gid=1315791574&single=true&output=csv'; 
-
-        let scheduleData = [];
-
-        async function init() {
-            try {
-                // 1. Fetch Schedule Data
-                const sResponse = await fetch(scheduleCsvUrl);
-                const sText = await sResponse.text();
-                scheduleData = sText.split('\n').map(row => row.split(','));
-
-                // 2. Fetch Standings Data
-                const response = await fetch(standingsCsvUrl);
-                const data = await response.text();
-                const rows = data.split('\n').map(row => row.split(','));
-                
-                renderStandings(rows);
-
-            } catch (error) {
-                document.getElementById('loader').textContent = "Error loading standings. Please refresh.";
-                console.error(error);
-            }
-        }
-
-        function renderStandings(rows) {
-            const tableHeader = document.getElementById('table-header');
-            const tableBody = document.getElementById('table-body');
-            const loader = document.getElementById('loader');
-            const table = document.getElementById('standings-table');
-
-            // Generate Headers
-            rows[0].forEach(headerText => {
-                let th = document.createElement('th');
-                th.textContent = headerText;
-                tableHeader.appendChild(th);
-            });
-
-            // Generate Rows
-            rows.slice(1).forEach(row => {
-                if (row.length < 2) return; 
-                let tr = document.createElement('tr');
-                
-                // Add click event for schedule
-                tr.onclick = () => openSchedule(row[0]); 
-
-                row.forEach(cellText => {
-                    let td = document.createElement('td');
-                    td.textContent = cellText;
-                    tr.appendChild(td);
-                });
-                tableBody.appendChild(tr);
-            });
-
-            loader.style.display = 'none';
-            table.style.display = 'table';
-        }
-
-        function openSchedule(playerName) {
+function openSchedule(playerName) {
     const modalBody = document.getElementById('modal-body');
     const modalTitle = document.getElementById('modal-title');
-    
-    // Clean the search name
-    const targetName = playerName.trim().toLowerCase();
-    modalTitle.textContent = `${playerName}'s Match History`;
     modalBody.innerHTML = '';
+    modalTitle.textContent = `${playerName}'s Match History`;
 
-    let matchesFound = 0;
+    // 1. Find the ID for this Name using Players Sheet (A=ID, B=Name)
+    const playerEntry = playersData.find(r => r[1] && r[1].trim() === playerName);
+    if (!playerEntry) {
+        modalBody.innerHTML = '<tr><td colspan="3">Player ID not found.</td></tr>';
+        return;
+    }
+    const targetID = playerEntry[0].trim();
 
+    // 2. Create an ID-to-Name Map for the Opponents
+    const idToName = {};
+    playersData.forEach(r => { if(r[0]) idToName[r[0].trim()] = r[1]; });
+
+    // 3. Filter Schedule (Assume Schedule: A=Week, B=P1_ID, C=P2_ID, D=Win, E=Proc)
+    let found = 0;
     scheduleData.slice(1).forEach(game => {
-        if (game.length < 3) return;
+        let [week, p1ID, p2ID, p1win, processed] = game.map(col => col ? col.trim() : "");
+        
+        if (p1ID === targetID || p2ID === targetID) {
+            found++;
+            const isP1 = (p1ID === targetID);
+            const opponentID = isP1 ? p2ID : p1ID;
+            const opponentName = idToName[opponentID] || opponentID;
 
-        // Force every column to a trimmed string to avoid errors
-        let week = game[0] ? game[0].toString().trim() : "";
-        let p1 = game[1] ? game[1].toString().trim() : "";
-        let p2 = game[2] ? game[2].toString().trim() : "";
-        let p1win = game[3] ? game[3].toString().trim().toUpperCase() : "";
-        let processed = game[4] ? game[4].toString().trim().toUpperCase() : "";
-
-        // Compare using lowercase to ignore case sensitivity
-        if (p1.toLowerCase() === targetName || p2.toLowerCase() === targetName) {
-            matchesFound++;
-            const opponent = (p1.toLowerCase() === targetName) ? p2 : p1;
-            let resultHtml = '<span style="color:#888">TBD</span>';
-
-            if (processed === 'TRUE') {
-                const p1DidWin = (p1win === 'TRUE');
-                const playerDidWin = (p1.toLowerCase() === targetName) ? p1DidWin : !p1DidWin;
-                resultHtml = playerDidWin ? '<span class="win">W</span>' : '<span class="loss">L</span>';
+            let result = '<i>TBD</i>';
+            if (processed.toUpperCase() === 'TRUE') {
+                const p1DidWin = (p1win.toUpperCase() === 'TRUE');
+                const playerDidWin = isP1 ? p1DidWin : !p1DidWin;
+                result = playerDidWin ? '<span class="win">W</span>' : '<span class="loss">L</span>';
             }
 
             let tr = document.createElement('tr');
-            tr.innerHTML = `<td>${week}</td><td>${opponent}</td><td>${resultHtml}</td>`;
+            tr.innerHTML = `<td>${week}</td><td>${opponentName}</td><td>${result}</td>`;
             modalBody.appendChild(tr);
         }
     });
 
-    if (matchesFound === 0) {
-        modalBody.innerHTML = '<tr><td colspan="3" style="text-align:center;">No matches found for this player.</td></tr>';
-    }
+    if (found === 0) modalBody.innerHTML = '<tr><td colspan="3">No games found in schedule.</td></tr>';
 
     document.getElementById('modal-overlay').style.display = 'block';
     document.getElementById('schedule-modal').style.display = 'block';
 }
 
-        function closeModal() {
-            document.getElementById('modal-overlay').style.display = 'none';
-            document.getElementById('schedule-modal').style.display = 'none';
-        }
+function closeModal() {
+    document.getElementById('modal-overlay').style.display = 'none';
+    document.getElementById('schedule-modal').style.display = 'none';
+}
 
-        init();
-    </script>
-</body>
-</html>
+init();
