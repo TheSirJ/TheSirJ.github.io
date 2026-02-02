@@ -150,6 +150,13 @@
         let scheduleData = [];
         let playersData = [];
 
+        // Helper to interpret various truthy values in CSV (e.g., '1', 'TRUE')
+        function truthy(val) {
+            if (!val && val !== 0) return false;
+            const s = String(val).trim().toLowerCase();
+            return s === '1' || s === 'true' || s === 'yes' || s === 'y' || s === 't';
+        }
+
         async function init() {
             try {
                 const [stR, schR, plR] = await Promise.all([fetch(standingsUrl), fetch(scheduleUrl), fetch(playersUrl)]);
@@ -217,8 +224,8 @@
                     const isP1 = (p1ID === targetID);
                     const oppName = idMap[isP1 ? p2ID : p1ID] || "Unknown";
                     let res = 'TBD';
-                    if ((proc || '').toUpperCase() === 'TRUE') {
-                        const p1W = (p1win || '').toUpperCase() === 'TRUE';
+                    if (truthy(proc)) {
+                        const p1W = truthy(p1win);
                         // use boolean comparison: if player is p1 and p1W true => win
                         res = (isP1 === p1W) ? '<span class="win">W</span>' : '<span class="loss">L</span>';
                     }
