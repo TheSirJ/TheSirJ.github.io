@@ -59,17 +59,22 @@
             max-height: 70vh; 
             display: flex;
             flex-direction: column;
-            overflow: hidden; /* This forces the scroll to happen inside, not outside */
+            /* Keep modal container visible so the internal scroll container can scroll */
+            overflow: visible;
             box-shadow: 0 10px 40px rgba(0,0,0,0.5);
         }
         
         .modal-scroll-container {
-            /* FIX: Force this box to scroll if content exceeds the space */
+            /* Force this box to scroll if content exceeds the space. */
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
             flex: 1 1 auto; 
             min-height: 0; /* Crucial for flexbox scrolling */
             margin-top: 10px;
             border: 1px solid #eee;
+            /* Limit the inner scroll area so it fits within the modal's max-height */
+            max-height: calc(70vh - 120px);
+            position: relative; /* helps position:sticky inside this scrolling context */
         }
         
         #modal-table {
@@ -79,7 +84,7 @@
         
         #modal-table th {
             position: sticky;
-            top: -1px; /* Slight offset ensures no gaps */
+            top: 0; /* stick to top of the scroll container */
             background-color: var(--felt-green);
             color: white;
             padding: 10px;
