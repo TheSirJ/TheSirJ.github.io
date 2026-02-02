@@ -120,7 +120,6 @@
     </div>
 
     <script>
-        // REPLACE scheduleCsvUrl with your actual published Schedule CSV link
         const standingsCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT7I8Vhws-a0KiVfiAzXZFneeKXAAJj51zqtjOf9h2AOHh51RWfZwyFCMtWU6VpckdXYVpGj8l0fPRv/pub?gid=2132397504&single=true&output=csv';
         const scheduleCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT7I8Vhws-a0KiVfiAzXZFneeKXAAJj51zqtjOf9h2AOHh51RWfZwyFCMtWU6VpckdXYVpGj8l0fPRv/pub?gid=1315791574&single=true&output=csv'; 
 
@@ -180,40 +179,51 @@
         }
 
         function openSchedule(playerName) {
-            const modalBody = document.getElementById('modal-body');
-            const modalTitle = document.getElementById('modal-title');
-            modalTitle.textContent = `${playerName}'s Match History`;
-            modalBody.innerHTML = '';
+    const modalBody = document.getElementById('modal-body');
+    const modalTitle = document.getElementById('modal-title');
+    
+    // Clean the search name
+    const targetName = playerName.trim().toLowerCase();
+    modalTitle.textContent = `${playerName}'s Match History`;
+    modalBody.innerHTML = '';
 
-            // Filter scheduleData (Week, P1, P2, P1Win, Processed)
-            scheduleData.slice(1).forEach(game => {
-                let [week, p1, p2, p1win, processed] = game;
-                if (!p1 || !p2) return;
+    let matchesFound = 0;
 
-                // Clean up strings (remove extra spaces/quotes)
-                p1 = p1.trim();
-                p2 = p2.trim();
-                playerName = playerName.trim();
+    scheduleData.slice(1).forEach(game => {
+        if (game.length < 3) return;
 
-                if (p1 === playerName || p2 === playerName) {
-                    const opponent = (p1 === playerName) ? p2 : p1;
-                    let resultHtml = '<i>TBD</i>';
+        // Force every column to a trimmed string to avoid errors
+        let week = game[0] ? game[0].toString().trim() : "";
+        let p1 = game[1] ? game[1].toString().trim() : "";
+        let p2 = game[2] ? game[2].toString().trim() : "";
+        let p1win = game[3] ? game[3].toString().trim().toUpperCase() : "";
+        let processed = game[4] ? game[4].toString().trim().toUpperCase() : "";
 
-                    if (processed && processed.trim().toUpperCase() === 'TRUE') {
-                        const p1DidWin = (p1win.trim().toUpperCase() === 'TRUE');
-                        const playerDidWin = (p1 === playerName) ? p1DidWin : !p1DidWin;
-                        resultHtml = playerDidWin ? '<span class="win">W</span>' : '<span class="loss">L</span>';
-                    }
+        // Compare using lowercase to ignore case sensitivity
+        if (p1.toLowerCase() === targetName || p2.toLowerCase() === targetName) {
+            matchesFound++;
+            const opponent = (p1.toLowerCase() === targetName) ? p2 : p1;
+            let resultHtml = '<span style="color:#888">TBD</span>';
 
-                    let tr = document.createElement('tr');
-                    tr.innerHTML = `<td>${week}</td><td>${opponent}</td><td>${resultHtml}</td>`;
-                    modalBody.appendChild(tr);
-                }
-            });
+            if (processed === 'TRUE') {
+                const p1DidWin = (p1win === 'TRUE');
+                const playerDidWin = (p1.toLowerCase() === targetName) ? p1DidWin : !p1DidWin;
+                resultHtml = playerDidWin ? '<span class="win">W</span>' : '<span class="loss">L</span>';
+            }
 
-            document.getElementById('modal-overlay').style.display = 'block';
-            document.getElementById('schedule-modal').style.display = 'block';
+            let tr = document.createElement('tr');
+            tr.innerHTML = `<td>${week}</td><td>${opponent}</td><td>${resultHtml}</td>`;
+            modalBody.appendChild(tr);
         }
+    });
+
+    if (matchesFound === 0) {
+        modalBody.innerHTML = '<tr><td colspan="3" style="text-align:center;">No matches found for this player.</td></tr>';
+    }
+
+    document.getElementById('modal-overlay').style.display = 'block';
+    document.getElementById('schedule-modal').style.display = 'block';
+}
 
         function closeModal() {
             document.getElementById('modal-overlay').style.display = 'none';
