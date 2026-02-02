@@ -32,6 +32,16 @@
             z-index: 100; 
         }
         
+        .modal-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            border-bottom: 2px solid var(--felt-green); 
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+            flex-shrink: 0; /* Prevents header from squishing */
+        }
+
         #schedule-modal {
             display: none;
             position: fixed;
@@ -42,28 +52,21 @@
             border-radius: 12px;
             z-index: 101;
             width: 90%;
-            max-width: 450px; /* Slightly narrower for a cleaner look */
-            max-height: 80vh; /* Limits height to 80% of the screen height */
+            max-width: 400px;
+            
+            /* FIX: Limits total height and enables flex layout */
+            max-height: 70vh; 
             display: flex;
             flex-direction: column;
             box-shadow: 0 10px 40px rgba(0,0,0,0.5);
         }
         
-        .modal-header { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center;
-            border-bottom: 2px solid var(--felt-green); 
-            padding-bottom: 10px;
-            margin-bottom: 10px;
-            flex-shrink: 0; /* Prevents header from squishing */
-        }
-        
-        /* This is the magic part for scrolling */
         .modal-scroll-container {
+            /* FIX: Tells this box to grow and show scrollbars if content is too long */
             overflow-y: auto;
-            flex-grow: 1;
-            border-radius: 4px;
+            flex-grow: 1; 
+            margin-top: 10px;
+            border: 1px solid #eee; /* Optional: adds a slight border around the scroll area */
         }
         
         #modal-table {
@@ -72,10 +75,12 @@
         }
         
         #modal-table th {
-            position: sticky; /* Keeps headers visible while you scroll */
+            position: sticky;
             top: 0;
             background-color: var(--felt-green);
-            z-index: 1;
+            color: white;
+            padding: 10px;
+            z-index: 2;
         }
     </style>
 </head>
@@ -94,11 +99,10 @@
     <div id="modal-overlay" onclick="closeModal()"></div>
     <div id="schedule-modal">
         <div class="modal-header">
-            <h3 id="modal-title" style="margin:0; font-size: 1.2rem;">Player Schedule</h3>
-            <span style="cursor:pointer; font-size: 1.5rem; font-weight: bold; color: #888;" onclick="closeModal()">×</span>
+            <h3 id="modal-title" style="margin:0;">Player Schedule</h3>
+            <span style="cursor:pointer; font-size: 1.5rem;" onclick="closeModal()">×</span>
         </div>
-        <div class="modal-scroll-container">
-            <table id="modal-table">
+        <div class="modal-scroll-container"> <table id="modal-table">
                 <thead>
                     <tr>
                         <th>Week</th>
